@@ -26,6 +26,7 @@ import com.example.blaze.persistence.function.model.Person;
 import com.example.blaze.persistence.function.view.CatSimpleView;
 import com.example.blaze.persistence.function.view.CatWithOwnerView;
 import com.example.blaze.persistence.function.view.PersonSimpleView;
+import org.hibernate.Session;
 import org.junit.After;
 import org.junit.Before;
 
@@ -75,6 +76,12 @@ public abstract class AbstractSampleTest {
             
             c4.setFather(c6);
             c6.getKittens().add(c4);
+
+            Session session = (Session) em.getDelegate();
+            session.createSQLQuery(
+                    "CREATE OR REPLACE FUNCTION get_cat_id(cat_id INT) " +
+                    "RETURNS INT AS $$ BEGIN RETURN cat_id; END; $$ LANGUAGE plpgsql;"
+            ).executeUpdate();
         });
     }
 

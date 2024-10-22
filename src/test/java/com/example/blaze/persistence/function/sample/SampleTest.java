@@ -16,44 +16,69 @@
 
 package com.example.blaze.persistence.function.sample;
 
-import com.blazebit.persistence.CriteriaBuilder;
-import com.blazebit.persistence.view.EntityViewSetting;
-import java.util.*;
+import com.blazebit.persistence.integration.view.spring.EnableEntityViews;
+import com.blazebit.persistence.spring.data.repository.config.EnableBlazeRepositories;
 import com.example.blaze.persistence.function.model.Cat;
-import com.example.blaze.persistence.function.model.Person;
-import com.example.blaze.persistence.function.view.CatSimpleView;
-import com.example.blaze.persistence.function.repository.CatSimpleViewRepository;
+import com.example.blaze.persistence.function.repository.CatRepository;
+import org.hibernate.Session;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportResource;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.*;
-import org.springframework.context.annotation.*;
-import org.springframework.beans.factory.annotation.*;
-import com.blazebit.persistence.integration.view.spring.EnableEntityViews;
-import com.blazebit.persistence.spring.data.repository.config.EnableBlazeRepositories;
+
+import java.util.List;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = SampleTest.TestConfig.class)
 public class SampleTest extends AbstractSampleTest {
 
     @Autowired
-    private CatSimpleViewRepository catSimpleViewRepository;
+    private CatRepository catRepository;
 
     @Test
-    public void sampleTest() {
+    public void function() {
         transactional(em -> {
-            final Iterable<CatSimpleView> listIterable = catSimpleViewRepository.findAll();
-            final List<CatSimpleView> list = new ArrayList<>();
-            listIterable.forEach(view -> list.add(view));
-            Assert.assertEquals(6, list.size());
+            Session session = (Session) em.getDelegate();
+            Integer number = (Integer) session.createSQLQuery("SELECT * FROM get_cat_id(?)")
+                    .setParameter(1, 10)
+                    .getSingleResult();
+            Assert.assertNotNull(number);
+            Assert.assertEquals((int) number, 10);
+        });
+    }
+
+    @Test
+    public void trivialSpecification() {
+        transactional(em -> {
+            Specification<Cat> spec = (root, query, cb) -> cb.ge(root.get("age"), 6);
+            List<Cat> cats = catRepository.findAll(spec);
+            Assert.assertEquals(3, cats.size());
+        });
+    }
+
+    @Test
+    public void functionSpecification() {
+        transactional(em -> {
+            Specification<Cat> spec = (root, query, cb) -> root.get("id").in(cb.function(
+                    "SELECT * FROM get_cat_id",
+                    List.class,
+                    cb.literal(1)
+            ));
+            List<Cat> cats = catRepository.findAll(spec);
+            Assert.assertEquals(6, cats.size());
         });
     }
 
     @Configuration
     @ComponentScan("com.example.blaze.persistence.function")
     @ImportResource("/META-INF/application-config.xml")
-    @EnableEntityViews(basePackages = { "com.example.blaze.persistence.function.view"})
+    @EnableEntityViews(basePackages = {"com.example.blaze.persistence.function.view"})
     @EnableBlazeRepositories(
             basePackages = "com.example.blaze.persistence.function.repository",
             entityManagerFactoryRef = "myEmf")
