@@ -18,11 +18,13 @@ package com.example.blaze.persistence.function.config;
 
 import com.blazebit.persistence.Criteria;
 import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.blazebit.persistence.integration.view.spring.EnableEntityViews;
 import com.blazebit.persistence.spi.CriteriaBuilderConfiguration;
+import com.blazebit.persistence.spi.JpqlFunctionGroup;
+import com.blazebit.persistence.spring.data.repository.config.EnableBlazeRepositories;
 import com.blazebit.persistence.view.EntityViewManager;
 import com.blazebit.persistence.view.spi.EntityViewConfiguration;
-import com.blazebit.persistence.integration.view.spring.EnableEntityViews;
-import com.blazebit.persistence.spring.data.repository.config.EnableBlazeRepositories;
+import com.example.blaze.persistence.function.config.function.GetCatFunction;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +35,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
 
 @Configuration
-@EnableEntityViews(basePackages = { "com.example.blaze.persistence.function.view"})
+@EnableEntityViews(basePackages = {"com.example.blaze.persistence.function.view"})
 @EnableBlazeRepositories(
         basePackages = "com.example.blaze.persistence.function.repository")
 public class BlazePersistenceConfiguration {
@@ -46,6 +48,8 @@ public class BlazePersistenceConfiguration {
     @Lazy(false)
     public CriteriaBuilderFactory createCriteriaBuilderFactory() {
         CriteriaBuilderConfiguration config = Criteria.getDefault();
+        JpqlFunctionGroup getCatFunction = new JpqlFunctionGroup("get_cat_id", new GetCatFunction());
+        config.registerFunction(getCatFunction);
         return config.createCriteriaBuilderFactory(entityManagerFactory);
     }
 

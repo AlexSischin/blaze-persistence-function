@@ -16,6 +16,7 @@
 
 package com.example.blaze.persistence.function.sample;
 
+import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.blazebit.persistence.integration.view.spring.EnableEntityViews;
 import com.blazebit.persistence.spring.data.repository.config.EnableBlazeRepositories;
 import com.example.blaze.persistence.function.model.Cat;
@@ -40,6 +41,9 @@ public class SampleTest extends AbstractSampleTest {
 
     @Autowired
     private CatRepository catRepository;
+
+    @Autowired
+    private CriteriaBuilderFactory cbf;
 
     @Test
     public void function() {
@@ -66,11 +70,23 @@ public class SampleTest extends AbstractSampleTest {
     public void functionSpecification() {
         transactional(em -> {
             Specification<Cat> spec = (root, query, cb) -> root.get("id").in(cb.function(
-                    "SELECT * FROM get_cat_id",
+                    "get_cat_id",
                     List.class,
                     cb.literal(6)
             ));
             List<Cat> cats = catRepository.findAll(spec);
+            Assert.assertEquals(1, cats.size());
+        });
+    }
+
+    @Test
+    public void blazePersistenceCriteriaBuilder() {
+        transactional(em -> {
+            // @formatter:off
+            List<Cat> cats = cbf.create(em, Cat.class, "c")
+                    .where("c.id").eqExpression("get_cat_id(6)")
+                    .getResultList();
+            // @formatter:on
             Assert.assertEquals(1, cats.size());
         });
     }
