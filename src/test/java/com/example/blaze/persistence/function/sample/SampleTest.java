@@ -68,7 +68,7 @@ public class SampleTest extends AbstractSampleTest {
             Specification<Cat> spec = (root, query, cb) -> root.get("id").in(cb.function(
                     "SELECT * FROM get_cat_id",
                     List.class,
-                    cb.literal(1)
+                    cb.literal(6)
             ));
             List<Cat> cats = catRepository.findAll(spec);
             Assert.assertEquals(1, cats.size());
