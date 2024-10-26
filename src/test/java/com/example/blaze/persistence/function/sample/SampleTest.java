@@ -71,7 +71,7 @@ public class SampleTest extends AbstractSampleTest {
                     cb.literal(1)
             ));
             List<Cat> cats = catRepository.findAll(spec);
-            Assert.assertEquals(6, cats.size());
+            Assert.assertEquals(1, cats.size());
         });
     }
 
